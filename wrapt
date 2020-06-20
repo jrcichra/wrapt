@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# jrcichra 06-18-2020 - idea after waking up from a nap. What if you could wrap apt and keep a git ledger file of all apt installs on a system?
+# You can set up a system with a series of `wrapt install` and `wrapt purge/remove` to get to a desired state of your system (package-wise) with little to no effort
+
+# valid commands
+# wrapt set `system_name` `optional_origin`
+# wrapt in place of apt (user can alias if they wish)
+
+function log {
+    # takes a log message and wrapts it with a wrapt box
+    echo "[wrapt] - $1"
+}
+
+function fatal {
+    # log a message then fail
+    log $1
+    exit 1
+}
+
+function create_local_config {
+
+    # create a local git repository in .config/wrapt/ if it doesn't already exist
+    system_name=$1
+    origin=$2
+    config="$HOME/.config/wrapt/"
+    # see if the origin repo already exists
+    if [ "$orgin" != "" ];then
+        RT=$(git ls-remote --exit-code origin)
+        if [ "$RT" != 0 ];then
+            # origin does not exist. Lets create it based on their input
+            RT=$(git remote add origin $origin)
+            if [ "$RT" != 0 ];then
+                fatal "Unable to add origin: '$origin' to git repo"
+            else
+                log "Succesfully added $origin to git repo"
+            fi
+        else
+            fatal "origin is already set in this repo!"
+        fi
+    fi
+
+    # check if it already exists
+    if [ ! -f "$config" ];then
+        # If it doesn't we want to create it 
+        RT=$(mkdir -p "$config")
+        if [ "$RT" != 0 ];then
+            fatal "Cannot mkdir -p a path for $system_name";
+        fi
+    fi
+
+    # set the config as our working path
+    cd "$config"
+
+    # git init if we haven't already
+    if [ ! -f ".git" ];then
+        # run git init
+        RT=$(git init)
+        if [ "$RT" != 0 ];then
+            fatal "Cannot git init. Make sure git is installed and configured!";
+        fi
+    fi
+
+    # add a file for this system if it didn't already exist
+    if [ ! -f "$system_name" ];then
+        # make a file for this system
+        RT=$(touch "$system_name")
+    fi
+}
+
+
+
+### MAIN ###
+# get args
+    while [[ $# -gt 0 ]]
+    do
+    key="$1"
+    case $key in 
+        set)
+        # set the 
